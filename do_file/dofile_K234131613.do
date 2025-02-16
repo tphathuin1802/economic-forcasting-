@@ -17,6 +17,106 @@ duplicates report Sales
 * Handling Outliers
 graph box Sales
 
+* Single Exponential Smoothing
+gen Month = tm(2004m1) + _n - 1
+format %tm Month
+tsset Month
+tssmooth exponential SalesSEM = Sales, s0(5629)
+replace SalesSEM = . in 1
+gen errorSEM = Sales - SalesSEM
+gen errorSEM2 = errorSEM^2
+mean errorSEM2
+gen abserrorSEM = abs(errorSEM)
+mean abserrorSEM
+gen APESEM = abserrorSEM/Sales
+mean APESEM
+
+*Holt-Winter Linear Trend
+tssmooth hwinters SalesHolt = Sales, s0(5360 269)
+replace SalesHolt = . in 1
+gen errorHolt = Sales - SalesHolt
+gen errorHolt2 = errorHolt^2
+mean errorHolt2
+gen abserrorHolt = abs(errorHolt)
+mean abserrorHolt
+gen APEHolt = abserrorHolt / Sales
+mean APEHolt
+
+***
+gen t = _n
+reg Sales t
+predict restp, residuals
+gen errortp = Sales - restp
+gen errortp2 = errortp^2
+mean errortp2
+gen abserrortp = abs(errortp)
+mean abserrortp
+gen APEtp = abserrortp / Sales
+mean APEtp
+reg Sales Month
+predict resswt, residuals
+gen errorresswt = Sales - resswt
+gen errorresswt2 = errorresswt^2
+mean errorresswt2
+gen abserrorresswt = abs(errorresswt)
+mean abserrorresswt
+gen APEresswt = abserrorresswt/Sales
+mean APEresswt
+reg Sales Month t
+drop resswt abserrorresswt errorresswt2 errorresswt APEresswt
+gen Month_num = mod(_n-1,12) + 1
+reg Sales i.Month_num
+predict resswt, residuals
+gen errorresswt = Sales - resswt
+gen errorresswt2 = errorresswt^2
+mean errorresswt2
+gen abserrorresswt = abs(errorresswt)
+mean abserrorresswt
+gen APEresswt = abserrorresswt / Sales
+mean APEresswt
+reg Sales i.Month_num t
+predict resadd, residuals
+gen errorresadd = Sales - resadd
+gen errorresadd2 = errorresadd^2
+mean errorresadd2
+gen abserrorresadd = abs(errorresadd)
+mean abserrorresadd
+gen APEresadd = abserrorresadd / Sales
+mean APEresadd
+
+*Refactor tp, singlewt, add
+drop resadd resswt restp errorresadd errorresswt errortp abserrorresadd abserrorresswt abserrortp errorresadd2 errorresswt2 errortp2 APEresadd APEresswt APEtp
+
+*Trend Projection
+reg Sales t
+predict errortp, residuals
+gen errortp2 = errortp^2
+mean errortp2
+gen abserrortp = abs(errortp)
+mean abserrortp
+gen APEtp = abserrortp/Sales
+mean APEtp
+
+* Seasonal Without Trend
+reg Sales i.Month_num
+predict errorswt, residuals
+gen errorswt2 = errorswt^2
+mean errorswt2
+gen abserrorswt = abs(errorswt)
+mean abserrorswt
+gen APEswt = abserrorswt/Sales
+mean APEswt
+
+* Additive
+reg Sales i.Month_num t
+predict erroradd, residuals
+gen erroradd2 = erroradd^2
+mean erroradd2
+gen abserroradd = abs(erroradd)
+mean abserroradd
+gen APEadd = abserroradd/Sales
+mean APEadd
+
 *Moving Average
 tssmooth ma Sales13MA = Sales , window(13)
 replace Sales13MA = . in 2
@@ -49,61 +149,3 @@ gen abserror5WMA = abs(error5WMA)
 mean abserror5WMA
 gen APE5WMA = abserror5WMA/Sales
 mean APE5WMA
-
-* Single Exponential Smoothing
-tsset Date
-
-gen Month = tm(2004m1) + _n - 1
-format %tm Month
-tsset Month
-tssmooth exponential SalesSEM = Sales, s0(5629)
-replace SalesSEM = . in 1
-gen errorSEM = Sales - SalesSEM
-gen errorSEM2 = errorSEM^2
-mean errorSEM2
-gen abserrorSEM = abs(errorSEM)
-mean abserrorSEM
-gen APESEM = abserrorSEM/Sales
-
-*Holt-Winter Linear Trend
-tssmooth hwinters SalesHolt = Sales, s0(5360 269)
-replace SalesHolt = . in 1
-gen errorHolt = Sales - SalesHolt
-gen errorHolt2 = errorHolt^2
-mean errorHolt2
-gen abserrorHolt = abs(errorHolt)
-mean abserrorHolt
-gen APEHolt = abserrorHolt / Sales
-mean APEHolt
-
-*Trend Projection
-reg Sales t
-predict errortp, residuals
-gen errortp2 = errortp^2
-mean errortp2
-gen abserrortp = abs(errortp)
-mean abserrortp
-gen APEtp = abserrortp/Sales
-mean APEtp
-
-*Seasonal Without Trend
-reg Sales i.Month_num
-predict errorswt, residuals
-gen errorswt2 = errorswt^2
-mean errorswt2
-gen abserrorswt = abs(errorswt)
-mean abserrorswt
-gen APEswt = abserrorswt/Sales
-mean APEswt
-
-* Additive
-reg Sales i.Month_num t
-predict erroradd, residuals
-gen erroradd2 = erroradd^2
-mean erroradd2
-gen abserroradd = abs(erroradd)
-mean abserroradd
-gen APEadd = abserroradd/Sales
-mean APEadd
-
-history
